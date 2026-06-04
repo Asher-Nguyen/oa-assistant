@@ -1,9 +1,13 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
 export type StepState = {
   inputs: Record<string, string>;
   output?: string;
   generatedAt?: string;
+  chat?: ChatMessage[];
+  guidedComplete?: boolean;
 };
 
 export type Project = {
@@ -13,6 +17,8 @@ export type Project = {
   createdAt: string;
   updatedAt: string;
   steps: Record<number, StepState>;
+  finalReport?: string;
+  finalReportGeneratedAt?: string;
 };
 
 const KEY = "oa.projects.v1";
@@ -131,8 +137,53 @@ export function saveStepOutput(projectId: string, stepId: number, output: string
   }));
 }
 
+export function saveStepChat(
+  projectId: string,
+  stepId: number,
+  chat: ChatMessage[],
+  guidedComplete?: boolean,
+) {
+  updateProject(projectId, (p) => ({
+    ...p,
+    steps: {
+      ...p.steps,
+      [stepId]: {
+        ...(p.steps[stepId] || { inputs: {} }),
+        chat,
+        ...(guidedComplete !== undefined ? { guidedComplete } : {}),
+      },
+    },
+  }));
+}
+
+export function mergeStepInputs(
+  projectId: string,
+  stepId: number,
+  partial: Record<string, string>,
+) {
+  updateProject(projectId, (p) => {
+    const existing = p.steps[stepId]?.inputs ?? {};
+    return {
+      ...p,
+      steps: {
+        ...p.steps,
+        [stepId]: { ...(p.steps[stepId] || { inputs: {} }), inputs: { ...existing, ...partial } },
+      },
+    };
+  });
+}
+
+export function saveFinalReport(projectId: string, report: string) {
+  updateProject(projectId, (p) => ({
+    ...p,
+    finalReport: report,
+    finalReportGeneratedAt: new Date().toISOString(),
+  }));
+}
+
 export function getCompletionPercent(p: Project | undefined) {
   if (!p) return 0;
   const done = Object.values(p.steps).filter((s) => s?.output).length;
   return Math.round((done / 8) * 100);
 }
+
