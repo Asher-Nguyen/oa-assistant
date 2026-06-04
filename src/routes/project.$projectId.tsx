@@ -108,6 +108,11 @@ function ProjectPage() {
               </div>
               <Progress value={pct} className="mt-1 h-1.5" />
               <div className="mt-3 flex gap-2">
+                <Button size="sm" className="gap-2" asChild>
+                  <Link to="/project/$projectId/guided" params={{ projectId: project.id }}>
+                    <Sparkles className="h-3.5 w-3.5" /> Guided Mode
+                  </Link>
+                </Button>
                 <Button size="sm" variant="outline" className="gap-2" onClick={() => exportReport(project)}>
                   <Download className="h-3.5 w-3.5" /> Export Report
                 </Button>
