@@ -1,9 +1,13 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
 export type StepState = {
   inputs: Record<string, string>;
   output?: string;
   generatedAt?: string;
+  chat?: ChatMessage[];
+  guidedComplete?: boolean;
 };
 
 export type Project = {
@@ -13,6 +17,8 @@ export type Project = {
   createdAt: string;
   updatedAt: string;
   steps: Record<number, StepState>;
+  finalReport?: string;
+  finalReportGeneratedAt?: string;
 };
 
 const KEY = "oa.projects.v1";
