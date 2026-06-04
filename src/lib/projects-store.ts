@@ -69,13 +69,18 @@ export function useProjects() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-export function useProject(id: string | undefined) {
-  const projects = useProjects();
+export function useHydrated() {
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
-  if (!id) return { project: undefined, hydrated };
-  return { project: projects.find((p) => p.id === id), hydrated };
+  return hydrated;
 }
+
+export function useProject(id: string | undefined): Project | undefined {
+  const projects = useProjects();
+  if (!id) return undefined;
+  return projects.find((p) => p.id === id);
+}
+
 
 export function createProject(input: { name: string; problemStatement: string }): Project {
   const now = new Date().toISOString();
