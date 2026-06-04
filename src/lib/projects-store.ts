@@ -16,16 +16,30 @@ export type Project = {
 };
 
 const KEY = "oa.projects.v1";
-
 const isBrowser = typeof window !== "undefined";
+const EMPTY: Project[] = [];
 
-function read(): Project[] {
-  if (!isBrowser) return [];
+// Cached snapshot — required for useSyncExternalStore referential stability.
+let cache: Project[] | null = null;
+
+function load(): Project[] {
+  if (!isBrowser) return EMPTY;
   try {
-    return JSON.parse(localStorage.getItem(KEY) || "[]");
+    const raw = localStorage.getItem(KEY);
+    return raw ? (JSON.parse(raw) as Project[]) : [];
   } catch {
     return [];
   }
+}
+
+function getSnapshot(): Project[] {
+  if (!isBrowser) return EMPTY;
+  if (cache === null) cache = load();
+  return cache;
+}
+
+function getServerSnapshot(): Project[] {
+  return EMPTY;
 }
 
 const listeners = new Set<() => void>();
@@ -33,54 +47,67 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
-function write(projects: Project[]) {
+function commit(projects: Project[]) {
   if (!isBrowser) return;
-  localStorage.setItem(KEY, JSON.stringify(projects));
+  cache = projects;
+  try {
+    localStorage.setItem(KEY, JSON.stringify(projects));
+  } catch {
+    // ignore quota errors
+  }
   notify();
 }
 
-export function useProjects() {
-  const subscribe = (cb: () => void) => {
-    listeners.add(cb);
-    return () => listeners.delete(cb);
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
   };
-  return useSyncExternalStore(subscribe, read, () => []);
 }
 
-export function useProject(id: string | undefined) {
-  const [proj, setProj] = useState<Project | undefined>(undefined);
-  useEffect(() => {
-    const update = () => setProj(read().find((p) => p.id === id));
-    update();
-    listeners.add(update);
-    return () => {
-      listeners.delete(update);
-    };
-  }, [id]);
-  return proj;
+export function useProjects() {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
+
+export function useHydrated() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  return hydrated;
+}
+
+export function useProject(id: string | undefined): Project | undefined {
+  const projects = useProjects();
+  if (!id) return undefined;
+  return projects.find((p) => p.id === id);
+}
+
 
 export function createProject(input: { name: string; problemStatement: string }): Project {
   const now = new Date().toISOString();
   const project: Project = {
-    id: crypto.randomUUID(),
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2) + Date.now().toString(36),
     name: input.name.trim() || "Untitled Analysis",
     problemStatement: input.problemStatement.trim(),
     createdAt: now,
     updatedAt: now,
     steps: {},
   };
-  write([project, ...read()]);
+  commit([project, ...getSnapshot()]);
   return project;
 }
 
 export function updateProject(id: string, mut: (p: Project) => Project) {
-  const projects = read().map((p) => (p.id === id ? { ...mut(p), updatedAt: new Date().toISOString() } : p));
-  write(projects);
+  const next = getSnapshot().map((p) =>
+    p.id === id ? { ...mut(p), updatedAt: new Date().toISOString() } : p,
+  );
+  commit(next);
 }
 
 export function deleteProject(id: string) {
-  write(read().filter((p) => p.id !== id));
+  commit(getSnapshot().filter((p) => p.id !== id));
 }
 
 export function saveStepInputs(projectId: string, stepId: number, inputs: Record<string, string>) {

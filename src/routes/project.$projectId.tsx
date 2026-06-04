@@ -15,8 +15,11 @@ import {
   getCompletionPercent,
   saveStepInputs,
   saveStepOutput,
+  useHydrated,
   useProject,
+  type Project,
 } from "@/lib/projects-store";
+
 import { generateStepOutput } from "@/lib/ai-generate";
 import {
   ArrowLeft,
@@ -45,9 +48,22 @@ export const Route = createFileRoute("/project/$projectId")({
 function ProjectPage() {
   const { projectId } = Route.useParams();
   const project = useProject(projectId);
+  const hydrated = useHydrated();
   const [activeStep, setActiveStep] = useState(1);
 
+  if (!hydrated) {
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-7xl px-6 py-24 text-center text-muted-foreground">
+          <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+          <p className="mt-3 text-sm">Loading workspace…</p>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!project) {
+
     return (
       <AppShell>
         <div className="mx-auto max-w-7xl px-6 py-24 text-center">
@@ -183,7 +199,7 @@ function StepWorkspace({
   stepId: number;
   initialInputs: Record<string, string>;
   initialOutput?: string;
-  project: ReturnType<typeof useProject>;
+  project: Project;
 }) {
   const step = getStep(stepId)!;
   const [inputs, setInputs] = useState<Record<string, string>>(initialInputs);
@@ -224,7 +240,7 @@ function StepWorkspace({
     saveStepInputs(projectId, stepId, inputs);
     setLoading(true);
     try {
-      const fresh = { ...project!, steps: { ...project!.steps, [stepId]: { inputs } } };
+      const fresh: Project = { ...project, steps: { ...project.steps, [stepId]: { inputs } } };
       const result = await generateStepOutput(fresh, stepId);
       setOutput(result);
       saveStepOutput(projectId, stepId, result);
@@ -369,7 +385,7 @@ function downloadText(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-function exportReport(project: NonNullable<ReturnType<typeof useProject>>) {
+function exportReport(project: Project) {
   const parts = [
     `# OA Analysis Report — ${project.name}`,
     `_Generated ${new Date().toLocaleString()}_`,
