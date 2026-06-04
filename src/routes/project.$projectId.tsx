@@ -199,7 +199,7 @@ function StepWorkspace({
   stepId: number;
   initialInputs: Record<string, string>;
   initialOutput?: string;
-  project: ReturnType<typeof useProject>;
+  project: Project;
 }) {
   const step = getStep(stepId)!;
   const [inputs, setInputs] = useState<Record<string, string>>(initialInputs);
@@ -240,7 +240,7 @@ function StepWorkspace({
     saveStepInputs(projectId, stepId, inputs);
     setLoading(true);
     try {
-      const fresh = { ...project!, steps: { ...project!.steps, [stepId]: { inputs } } };
+      const fresh: Project = { ...project, steps: { ...project.steps, [stepId]: { inputs } } };
       const result = await generateStepOutput(fresh, stepId);
       setOutput(result);
       saveStepOutput(projectId, stepId, result);
@@ -385,7 +385,7 @@ function downloadText(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-function exportReport(project: NonNullable<ReturnType<typeof useProject>>) {
+function exportReport(project: Project) {
   const parts = [
     `# OA Analysis Report — ${project.name}`,
     `_Generated ${new Date().toLocaleString()}_`,
