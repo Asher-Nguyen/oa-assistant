@@ -15,8 +15,11 @@ import {
   getCompletionPercent,
   saveStepInputs,
   saveStepOutput,
+  useHydrated,
   useProject,
+  type Project,
 } from "@/lib/projects-store";
+
 import { generateStepOutput } from "@/lib/ai-generate";
 import {
   ArrowLeft,
@@ -45,9 +48,22 @@ export const Route = createFileRoute("/project/$projectId")({
 function ProjectPage() {
   const { projectId } = Route.useParams();
   const project = useProject(projectId);
+  const hydrated = useHydrated();
   const [activeStep, setActiveStep] = useState(1);
 
+  if (!hydrated) {
+    return (
+      <AppShell>
+        <div className="mx-auto max-w-7xl px-6 py-24 text-center text-muted-foreground">
+          <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
+          <p className="mt-3 text-sm">Loading workspace…</p>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!project) {
+
     return (
       <AppShell>
         <div className="mx-auto max-w-7xl px-6 py-24 text-center">
