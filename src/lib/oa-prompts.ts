@@ -156,7 +156,7 @@ OUTPUT FORMAT:
 export function buildFinalReportPrompt(project: Project) {
   const stepArtifacts = OA_STEPS.map((s) => {
     const o = project.steps[s.id]?.output;
-    return `## Step ${s.id} — ${s.name}\n${o || "_artifact not generated_"}`;
+    return `## Step ${s.id} — ${s.name}\n${o ? sanitize(o, 4000) : "_artifact not generated_"}`;
   }).join("\n\n---\n\n");
 
   return `${SENIOR_OA_PERSONA}
