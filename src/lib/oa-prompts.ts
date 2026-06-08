@@ -131,8 +131,11 @@ Generate the formal artifact for **Step ${stepId} — ${step.name}** of the OA 8
 
 ${sp.artifact}
 
-Project: "${project.name}"
-Problem Statement: ${project.problemStatement || "(not provided)"}
+Project: <project_name>${sanitize(project.name, 200)}</project_name>
+Problem Statement:
+<problem_statement>
+${sanitize(project.problemStatement, 4000) || "(not provided)"}
+</problem_statement>
 
 Captured Intake for this step:
 ${inputBlock}
