@@ -19,8 +19,29 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { OA_STEPS } from "@/lib/oa-steps";
 import { createProject, deleteProject, getCompletionPercent, useProjects } from "@/lib/projects-store";
-import { ArrowRight, FileText, Plus, Radar, Sparkles, Trash2, ShieldCheck, Workflow } from "lucide-react";
+import { ArrowRight, FileText, Plus, Radar, Sparkles, Trash2, ShieldCheck, Workflow, GraduationCap, MapPin, Anchor, Briefcase } from "lucide-react";
 import { toast } from "sonner";
+import asherAsset from "@/assets/asher-nguyen.jpg.asset.json";
+import mattAsset from "@/assets/matt-kang.png.asset.json";
+
+const CONTRIBUTORS = [
+  {
+    name: "Asher Nguyen",
+    photo: asherAsset.url,
+    role: "Operations Analysis Developer",
+    education: "Data Science @ USNA",
+    hometown: "Dallas, TX",
+    track: "SWO Nuke",
+  },
+  {
+    name: "Matt Kang",
+    photo: mattAsset.url,
+    role: "Operations Analysis Developer",
+    education: "Data Science @ USNA",
+    hometown: "Philadelphia, PA",
+    track: "Navy Cyber",
+  },
+];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -263,6 +284,77 @@ function Index() {
               <div>› propose methodology</div>
               <div className="text-success">✓ artifact ready — step 04/08</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CONTRIBUTORS */}
+      <section id="contributors" className="border-t border-border bg-surface/30">
+        <div className="mx-auto max-w-7xl px-6 py-20">
+          <div className="flex items-center gap-2">
+            <span className="text-stencil text-xs text-primary">Credits</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <div className="mt-4 text-center">
+            <p className="text-stencil text-[11px] tracking-[0.25em] text-primary">
+              DEVELOPED BY USNA OPERATIONS ANALYSIS INTERNS
+            </p>
+            <h2 className="mt-3 font-display text-3xl font-semibold md:text-4xl">
+              Engineering &amp; Analysis Team
+            </h2>
+            <div className="mx-auto mt-4 h-px w-24 bg-primary/60" />
+          </div>
+
+          <div className="mt-12 grid gap-8 md:grid-cols-2">
+            {CONTRIBUTORS.map((c) => (
+              <div
+                key={c.name}
+                className="ring-grid group relative overflow-hidden rounded-xl bg-card p-6 transition hover:border-primary/50"
+              >
+                <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+                  <div className="relative shrink-0">
+                    <div className="absolute -inset-1 rounded-lg bg-gradient-to-br from-primary via-primary/40 to-primary/10 opacity-80 blur-[2px]" />
+                    <div className="relative overflow-hidden rounded-lg border-2 border-primary/80 bg-surface">
+                      <img
+                        src={c.photo}
+                        alt={`Portrait of ${c.name}`}
+                        loading="lazy"
+                        className="h-40 w-32 object-cover sm:h-44 sm:w-36"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="font-display text-2xl font-semibold tracking-tight">{c.name}</h3>
+                    <p className="mt-1 text-stencil text-[11px] tracking-[0.2em] text-primary">
+                      {c.role.toUpperCase()}
+                    </p>
+                    <div className="mt-4 h-px bg-border" />
+                    <ul className="mt-4 space-y-2.5 text-sm">
+                      <li className="flex items-center justify-center gap-2.5 sm:justify-start">
+                        <Briefcase className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="text-muted-foreground">Role:</span>
+                        <span className="font-medium text-foreground">{c.role}</span>
+                      </li>
+                      <li className="flex items-center justify-center gap-2.5 sm:justify-start">
+                        <GraduationCap className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="text-muted-foreground">Education:</span>
+                        <span className="font-medium text-foreground">{c.education}</span>
+                      </li>
+                      <li className="flex items-center justify-center gap-2.5 sm:justify-start">
+                        <MapPin className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="text-muted-foreground">Hometown:</span>
+                        <span className="font-medium text-foreground">{c.hometown}</span>
+                      </li>
+                      <li className="flex items-center justify-center gap-2.5 sm:justify-start">
+                        <Anchor className="h-4 w-4 shrink-0 text-primary" />
+                        <span className="text-muted-foreground">Service Track:</span>
+                        <span className="font-medium text-foreground">{c.track}</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
