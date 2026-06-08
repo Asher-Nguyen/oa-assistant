@@ -57,6 +57,14 @@ export const STEP_PROMPTS: Record<number, { intake: string; artifact: string }> 
   },
 };
 
+// Strip control chars and cap length so untrusted user text cannot inject
+// instruction-like content or exhaust the model context.
+function sanitize(s: unknown, max: number): string {
+  const str = typeof s === "string" ? s : String(s ?? "");
+  const cleaned = str.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+  return cleaned.length > max ? cleaned.slice(0, max) + "…" : cleaned;
+}
+
 export function buildPriorContext(project: Project, stepId: number): string {
   const prior = OA_STEPS.filter((s) => s.id < stepId)
     .map((s) => {
@@ -65,11 +73,11 @@ export function buildPriorContext(project: Project, stepId: number): string {
       const inputSummary = inputs
         ? Object.entries(inputs)
             .filter(([, v]) => v && v.trim())
-            .map(([k, v]) => `  - ${k}: ${truncate(v, 280)}`)
+            .map(([k, v]) => `  - ${k}: ${sanitize(v, 280)}`)
             .join("\n")
         : "";
       if (!o && !inputSummary) return null;
-      return `### Step ${s.id} — ${s.name}\n${inputSummary ? `Captured inputs:\n${inputSummary}\n` : ""}${o ? `Generated artifact:\n${truncate(o, 800)}` : ""}`;
+      return `### Step ${s.id} — ${s.name}\n${inputSummary ? `Captured inputs:\n${inputSummary}\n` : ""}${o ? `Generated artifact:\n${sanitize(o, 800)}` : ""}`;
     })
     .filter(Boolean)
     .join("\n\n");
