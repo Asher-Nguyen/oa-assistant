@@ -243,7 +243,15 @@ function Index() {
                 Have the assistant act as a Senior Operations Analyst — walking you through all 8
                 steps one question at a time and generating every artifact along the way.
               </p>
-              <Button className="mt-6 gap-2" onClick={() => toast.info("Guided mode unlocks once AI Gateway is connected.")}>
+              <Button
+                className="mt-6 gap-2"
+                onClick={() => {
+                  const existing = projects[0];
+                  const target = existing ?? createProject({ name: "Guided OA Session", problemStatement: "" });
+                  if (!existing) toast.success(`Project "${target.name}" created`);
+                  navigate({ to: "/project/$projectId/guided", params: { projectId: target.id } });
+                }}
+              >
                 <Sparkles className="h-4 w-4" /> Launch Guided Mode
               </Button>
             </div>
