@@ -164,14 +164,17 @@ export function buildFinalReportPrompt(project: Project) {
 Synthesize a **Final OA Report** for the decision maker by integrating all 8 step artifacts.
 This is the deliverable that goes to the customer.
 
-Project: "${project.name}"
-Problem Statement: ${project.problemStatement || "(not provided)"}
+Project: <project_name>${sanitize(project.name, 200)}</project_name>
+Problem Statement:
+<problem_statement>
+${sanitize(project.problemStatement, 4000) || "(not provided)"}
+</problem_statement>
 
 Step Artifacts:
 ${stepArtifacts}
 
 OUTPUT FORMAT (markdown):
-# Final OA Report — ${project.name}
+# Final OA Report — ${sanitize(project.name, 200)}
 
 ## 1. Executive Summary
 (3–5 sentences. Customer-ready. Lead with the recommendation.)
