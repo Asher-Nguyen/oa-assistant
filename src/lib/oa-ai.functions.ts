@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader, getRequestHost } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { generateText } from "ai";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
@@ -11,17 +12,17 @@ import {
 const MODEL = "openai/gpt-5-mini";
 
 const ProjectSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  problemStatement: z.string().default(""),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  steps: z.record(z.string(), z.any()),
+  id: z.string().max(128),
+  name: z.string().max(200),
+  problemStatement: z.string().max(4000).default(""),
+  createdAt: z.string().max(64),
+  updatedAt: z.string().max(64),
+  steps: z.record(z.string().max(8), z.any()),
 });
 
 const MessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.string(),
+  content: z.string().max(4000),
 });
 
 function getProvider() {
@@ -30,15 +31,37 @@ function getProvider() {
   return createLovableAiGatewayProvider(key);
 }
 
+/**
+ * Reject cross-origin callers as a basic anti-abuse control on AI endpoints
+ * that consume the server-side LOVABLE_API_KEY budget. Same-origin app
+ * traffic (browser fetch from the deployed site) always sends Origin or
+ * Referer matching the request host.
+ */
+function requireSameOrigin() {
+  const host = getRequestHost();
+  if (!host) throw new Response("Forbidden", { status: 403 });
+  const origin = getRequestHeader("origin");
+  const referer = getRequestHeader("referer");
+  const source = origin ?? referer;
+  if (!source) throw new Response("Forbidden", { status: 403 });
+  try {
+    const sourceHost = new URL(source).host;
+    if (sourceHost !== host) throw new Response("Forbidden", { status: 403 });
+  } catch {
+    throw new Response("Forbidden", { status: 403 });
+  }
+}
+
 export const oaGuidedTurn = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       project: ProjectSchema,
       stepId: z.number().int().min(1).max(8),
-      messages: z.array(MessageSchema),
+      messages: z.array(MessageSchema).max(60),
     }),
   )
   .handler(async ({ data }) => {
+    requireSameOrigin();
     const provider = getProvider();
     const system = buildGuidedSystemPrompt(data.project as never, data.stepId);
     const messages =
@@ -63,6 +86,7 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    requireSameOrigin();
     const provider = getProvider();
     const prompt = buildArtifactPrompt(data.project as never, data.stepId);
     const result = await generateText({
@@ -75,6 +99,7 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
 export const oaFinalReport = createServerFn({ method: "POST" })
   .inputValidator(z.object({ project: ProjectSchema }))
   .handler(async ({ data }) => {
+    requireSameOrigin();
     const provider = getProvider();
     const prompt = buildFinalReportPrompt(data.project as never);
     const result = await generateText({
