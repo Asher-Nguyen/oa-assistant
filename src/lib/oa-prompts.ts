@@ -198,6 +198,3 @@ OUTPUT FORMAT (markdown):
 Keep it tight: 800–1400 words. Senior-analyst voice. No AI meta-commentary.`;
 }
 
-function truncate(s: string, n: number) {
-  return s.length > n ? s.slice(0, n) + "…" : s;
-}
