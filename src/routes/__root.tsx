@@ -79,19 +79,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "OA Analysis Assistant" },
+      { title: "MFC Operations Analysis Assistant" },
       {
         name: "description",
         content:
           "AI-powered wrapper around the Lockheed Martin MFC Operations Analysis 8-Step Process.",
       },
-      { property: "og:title", content: "OA Analysis Assistant" },
+      { property: "og:title", content: "MFC Operations Analysis Assistant" },
       {
         property: "og:description",
         content: "Run the OA 8-Step Process with structured inputs, AI generation, and exportable reports.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "MFC Operations Analysis Assistant" },
+      { name: "description", content: "The structured workspace for MFC analysts, guided end-to-end." },
+      { property: "og:description", content: "The structured workspace for MFC analysts, guided end-to-end." },
+      { name: "twitter:description", content: "The structured workspace for MFC analysts, guided end-to-end." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/6RAoYyvWa0crfKGwi6F7TqhWwpj1/social-images/social-1780944847235-OA_Social_image.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/6RAoYyvWa0crfKGwi6F7TqhWwpj1/social-images/social-1780944847235-OA_Social_image.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
