@@ -254,10 +254,11 @@ function GuidedStep({
   async function handleGenerate() {
     setGenerating(true);
     try {
-      const res = await generateArt({ data: { project, stepId } });
+      const res = await generateArt({ data: { project, stepId, mode: "standard" } });
       setOutput(res.artifact);
       setDraft(res.artifact);
       setEditing(true);
+      setView("standard");
       saveStepOutput(project.id, stepId, res.artifact);
       toast.success("Artifact generated — review and edit before advancing");
     } catch (e: unknown) {
@@ -265,6 +266,21 @@ function GuidedStep({
       toast.error(msg);
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleGenerateExpert() {
+    setGeneratingExpert(true);
+    try {
+      const res = await generateArt({ data: { project, stepId, mode: "expert" } });
+      setExpertOutput(res.artifact);
+      setView("expert");
+      toast.success("Expert AI Analysis ready");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Expert analysis failed";
+      toast.error(msg);
+    } finally {
+      setGeneratingExpert(false);
     }
   }
 
