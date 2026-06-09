@@ -5,6 +5,7 @@ import { generateText } from "ai";
 import { createLovableAiGatewayProvider, createOllamaProvider } from "./ai-gateway.server";
 import {
   buildArtifactPrompt,
+  buildExpertArtifactPrompt,
   buildFinalReportPrompt,
   buildGuidedSystemPrompt,
 } from "./oa-prompts";
