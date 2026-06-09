@@ -90,17 +90,20 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
     z.object({
       project: ProjectSchema,
       stepId: z.number().int().min(1).max(8),
+      mode: z.enum(["standard", "expert"]).default("standard"),
     }),
   )
   .handler(async ({ data }) => {
     requireSameOrigin();
     const { provider, model } = getProviderAndModel();
-    const prompt = buildArtifactPrompt(data.project as never, data.stepId);
+    const expert =
+      data.mode === "expert" ? buildExpertArtifactPrompt(data.project as never, data.stepId) : null;
+    const prompt = expert ?? buildArtifactPrompt(data.project as never, data.stepId);
     const result = await generateText({
       model: provider(model),
       prompt,
     });
-    return { artifact: result.text };
+    return { artifact: result.text, mode: expert ? "expert" : "standard" };
   });
 
 export const oaFinalReport = createServerFn({ method: "POST" })
