@@ -2,14 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, getRequestHost } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { generateText } from "ai";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { createLovableAiGatewayProvider, createOllamaProvider } from "./ai-gateway.server";
 import {
   buildArtifactPrompt,
   buildFinalReportPrompt,
   buildGuidedSystemPrompt,
 } from "./oa-prompts";
 
-const MODEL = "openai/gpt-5-mini";
+const CLOUD_MODEL = "openai/gpt-5-mini";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3";
 
 const ProjectSchema = z.object({
   id: z.string().max(128),
@@ -25,11 +26,16 @@ const MessageSchema = z.object({
   content: z.string().max(4000),
 });
 
-function getProvider() {
+function getProviderAndModel() {
+  const ollamaUrl = process.env.OLLAMA_BASE_URL;
+  if (ollamaUrl) {
+    return { provider: createOllamaProvider(ollamaUrl), model: OLLAMA_MODEL };
+  }
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("Missing LOVABLE_API_KEY");
-  return createLovableAiGatewayProvider(key);
+  return { provider: createLovableAiGatewayProvider(key), model: CLOUD_MODEL };
 }
+
 
 /**
  * Reject cross-origin callers as a basic anti-abuse control on AI endpoints
