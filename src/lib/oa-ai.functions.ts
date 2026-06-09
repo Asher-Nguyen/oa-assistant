@@ -68,7 +68,7 @@ export const oaGuidedTurn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     requireSameOrigin();
-    const provider = getProvider();
+    const { provider, model } = getProviderAndModel();
     const system = buildGuidedSystemPrompt(data.project as never, data.stepId);
     const messages =
       data.messages.length === 0
@@ -76,7 +76,7 @@ export const oaGuidedTurn = createServerFn({ method: "POST" })
         : data.messages;
 
     const result = await generateText({
-      model: provider(MODEL),
+      model: provider(model),
       system,
       messages,
     });
@@ -93,10 +93,10 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     requireSameOrigin();
-    const provider = getProvider();
+    const { provider, model } = getProviderAndModel();
     const prompt = buildArtifactPrompt(data.project as never, data.stepId);
     const result = await generateText({
-      model: provider(MODEL),
+      model: provider(model),
       prompt,
     });
     return { artifact: result.text };
@@ -106,10 +106,10 @@ export const oaFinalReport = createServerFn({ method: "POST" })
   .inputValidator(z.object({ project: ProjectSchema }))
   .handler(async ({ data }) => {
     requireSameOrigin();
-    const provider = getProvider();
+    const { provider, model } = getProviderAndModel();
     const prompt = buildFinalReportPrompt(data.project as never);
     const result = await generateText({
-      model: provider(MODEL),
+      model: provider(model),
       prompt,
     });
     return { report: result.text };
