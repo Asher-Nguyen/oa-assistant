@@ -27,6 +27,7 @@ import {
 } from "@/lib/oa-ai.functions";
 import {
   ArrowRight,
+  Brain,
   Check,
   ChevronLeft,
   FileText,
