@@ -186,6 +186,10 @@ function GuidedStep({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [expertOutput, setExpertOutput] = useState<string | undefined>(undefined);
+  const [generatingExpert, setGeneratingExpert] = useState(false);
+  const [view, setView] = useState<"standard" | "expert">("standard");
+  const expertAvailable = stepId >= 1 && stepId <= 5;
   const scrollRef = useRef<HTMLDivElement>(null);
   const bootRef = useRef(false);
 
