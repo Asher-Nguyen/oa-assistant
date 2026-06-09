@@ -27,6 +27,7 @@ import {
 } from "@/lib/oa-ai.functions";
 import {
   ArrowRight,
+  Brain,
   Check,
   ChevronLeft,
   FileText,
@@ -185,6 +186,10 @@ function GuidedStep({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [expertOutput, setExpertOutput] = useState<string | undefined>(undefined);
+  const [generatingExpert, setGeneratingExpert] = useState(false);
+  const [view, setView] = useState<"standard" | "expert">("standard");
+  const expertAvailable = stepId >= 1 && stepId <= 5;
   const scrollRef = useRef<HTMLDivElement>(null);
   const bootRef = useRef(false);
 
@@ -249,10 +254,11 @@ function GuidedStep({
   async function handleGenerate() {
     setGenerating(true);
     try {
-      const res = await generateArt({ data: { project, stepId } });
+      const res = await generateArt({ data: { project, stepId, mode: "standard" } });
       setOutput(res.artifact);
       setDraft(res.artifact);
       setEditing(true);
+      setView("standard");
       saveStepOutput(project.id, stepId, res.artifact);
       toast.success("Artifact generated — review and edit before advancing");
     } catch (e: unknown) {
@@ -260,6 +266,21 @@ function GuidedStep({
       toast.error(msg);
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleGenerateExpert() {
+    setGeneratingExpert(true);
+    try {
+      const res = await generateArt({ data: { project, stepId, mode: "expert" } });
+      setExpertOutput(res.artifact);
+      setView("expert");
+      toast.success("Expert AI Analysis ready");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Expert analysis failed";
+      toast.error(msg);
+    } finally {
+      setGeneratingExpert(false);
     }
   }
 
@@ -342,16 +363,27 @@ function GuidedStep({
 
       {/* Artifact */}
       <section className="ring-grid rounded-lg bg-card">
-        <header className="flex items-center justify-between border-b border-border p-5">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div>
             <div className="font-mono text-[11px] uppercase tracking-wider text-accent">Artifact</div>
             <h3 className="font-display text-xl font-semibold">Step {stepId} Output</h3>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button onClick={handleGenerate} disabled={generating || !complete} className="gap-2">
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
               {output ? "Regenerate" : "Generate Artifact"}
             </Button>
+            {expertAvailable && (
+              <Button
+                onClick={handleGenerateExpert}
+                disabled={generatingExpert || !complete}
+                variant="secondary"
+                className="gap-2"
+              >
+                {generatingExpert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+                {expertOutput ? "Re-run Expert AI Analysis" : "Run Expert AI Analysis"}
+              </Button>
+            )}
             {output && stepId < 8 && (
               <Button variant="outline" onClick={onAdvance} className="gap-2">
                 Next Step <ArrowRight className="h-4 w-4" />
@@ -359,24 +391,69 @@ function GuidedStep({
             )}
           </div>
         </header>
+
+        {/* View toggle (only when both outputs exist) */}
+        {expertAvailable && expertOutput && output && (
+          <div className="flex gap-1 border-b border-border bg-surface/40 p-2">
+            <button
+              onClick={() => setView("standard")}
+              className={
+                "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
+                (view === "standard"
+                  ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              Structured Input Summary
+            </button>
+            <button
+              onClick={() => setView("expert")}
+              className={
+                "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
+                (view === "expert"
+                  ? "bg-accent/20 text-foreground ring-1 ring-accent/40"
+                  : "text-muted-foreground hover:text-foreground")
+              }
+            >
+              Expert AI Analysis
+            </button>
+          </div>
+        )}
+
         <div className="p-5">
-          {!output && !generating && (
+          {!output && !expertOutput && !generating && !generatingExpert && (
             <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
               <FileText className="h-8 w-8" />
               <p className="mt-3 max-w-xs text-sm">
                 {complete
-                  ? "Intake captured. Generate the formal Step " + stepId + " artifact."
+                  ? "Intake captured. Generate the formal Step " + stepId + " artifact, or run the Expert AI Analysis."
                   : "Complete the guided Q&A above, then generate the artifact."}
               </p>
             </div>
           )}
-          {generating && (
+          {(generating || generatingExpert) && (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <p className="mt-3 text-sm">Synthesizing artifact…</p>
+              <p className="mt-3 text-sm">
+                {generatingExpert ? "Running expert analyst framework…" : "Synthesizing artifact…"}
+              </p>
             </div>
           )}
-          {output && !editing && (
+
+          {/* Expert view */}
+          {view === "expert" && expertOutput && !generating && !generatingExpert && (
+            <>
+              <div className="mb-3 font-mono text-[10px] uppercase tracking-wider text-accent">
+                Expert AI Analysis · Senior MFC Analyst Framework
+              </div>
+              <article className="prose-oa max-w-none whitespace-pre-wrap font-mono text-[13px] leading-6 text-foreground">
+                {expertOutput}
+              </article>
+            </>
+          )}
+
+          {/* Standard view */}
+          {view === "standard" && output && !editing && !generating && (
             <>
               <article className="prose-oa max-w-none whitespace-pre-wrap font-mono text-[13px] leading-6 text-foreground">
                 {output}
@@ -388,7 +465,7 @@ function GuidedStep({
               </div>
             </>
           )}
-          {output && editing && (
+          {view === "standard" && output && editing && (
             <>
               <Textarea
                 rows={18}
