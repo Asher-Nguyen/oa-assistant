@@ -32,27 +32,6 @@ function getProviderAndModel() {
 }
 
 
-/**
- * Reject cross-origin callers as a basic anti-abuse control on AI endpoints
- * that consume the server-side LOVABLE_API_KEY budget. Same-origin app
- * traffic (browser fetch from the deployed site) always sends Origin or
- * Referer matching the request host.
- */
-function requireSameOrigin() {
-  const host = getRequestHost();
-  if (!host) throw new Response("Forbidden", { status: 403 });
-  const origin = getRequestHeader("origin");
-  const referer = getRequestHeader("referer");
-  const source = origin ?? referer;
-  if (!source) throw new Response("Forbidden", { status: 403 });
-  try {
-    const sourceHost = new URL(source).host;
-    if (sourceHost !== host) throw new Response("Forbidden", { status: 403 });
-  } catch {
-    throw new Response("Forbidden", { status: 403 });
-  }
-}
-
 export const oaGuidedTurn = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
