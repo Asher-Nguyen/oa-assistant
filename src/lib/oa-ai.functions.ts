@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeader, getRequestHost } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { generateText } from "ai";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
@@ -33,27 +32,6 @@ function getProviderAndModel() {
 }
 
 
-/**
- * Reject cross-origin callers as a basic anti-abuse control on AI endpoints
- * that consume the server-side LOVABLE_API_KEY budget. Same-origin app
- * traffic (browser fetch from the deployed site) always sends Origin or
- * Referer matching the request host.
- */
-function requireSameOrigin() {
-  const host = getRequestHost();
-  if (!host) throw new Response("Forbidden", { status: 403 });
-  const origin = getRequestHeader("origin");
-  const referer = getRequestHeader("referer");
-  const source = origin ?? referer;
-  if (!source) throw new Response("Forbidden", { status: 403 });
-  try {
-    const sourceHost = new URL(source).host;
-    if (sourceHost !== host) throw new Response("Forbidden", { status: 403 });
-  } catch {
-    throw new Response("Forbidden", { status: 403 });
-  }
-}
-
 export const oaGuidedTurn = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
@@ -63,7 +41,6 @@ export const oaGuidedTurn = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    requireSameOrigin();
     const { provider, model } = getProviderAndModel();
     const system = buildGuidedSystemPrompt(data.project as never, data.stepId);
     const messages =
@@ -89,7 +66,6 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    requireSameOrigin();
     const { provider, model } = getProviderAndModel();
     const expert =
       data.mode === "expert" ? buildExpertArtifactPrompt(data.project as never, data.stepId) : null;
@@ -104,7 +80,6 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
 export const oaFinalReport = createServerFn({ method: "POST" })
   .inputValidator(z.object({ project: ProjectSchema }))
   .handler(async ({ data }) => {
-    requireSameOrigin();
     const { provider, model } = getProviderAndModel();
     const prompt = buildFinalReportPrompt(data.project as never);
     const result = await generateText({
