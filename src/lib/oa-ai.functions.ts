@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader, getRequestHost } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { generateText } from "ai";
-import { createLovableAiGatewayProvider, createOllamaProvider } from "./ai-gateway.server";
+import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import {
   buildArtifactPrompt,
   buildExpertArtifactPrompt,
@@ -10,8 +10,7 @@ import {
   buildGuidedSystemPrompt,
 } from "./oa-prompts";
 
-const CLOUD_MODEL = "openai/gpt-5-mini";
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3";
+const MODEL = "openai/gpt-5-mini";
 
 const ProjectSchema = z.object({
   id: z.string().max(128),
@@ -28,13 +27,9 @@ const MessageSchema = z.object({
 });
 
 function getProviderAndModel() {
-  const ollamaUrl = process.env.OLLAMA_BASE_URL;
-  if (ollamaUrl) {
-    return { provider: createOllamaProvider(ollamaUrl), model: OLLAMA_MODEL };
-  }
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("Missing LOVABLE_API_KEY");
-  return { provider: createLovableAiGatewayProvider(key), model: CLOUD_MODEL };
+  return { provider: createLovableAiGatewayProvider(key), model: MODEL };
 }
 
 

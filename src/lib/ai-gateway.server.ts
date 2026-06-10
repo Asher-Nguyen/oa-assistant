@@ -10,15 +10,3 @@ export function createLovableAiGatewayProvider(lovableApiKey: string) {
     },
   });
 }
-
-export function createOllamaProvider(baseURL: string) {
-  const normalized = baseURL.replace(/\/+$/, "");
-  const url = /\/v1$/.test(normalized) ? normalized : `${normalized}/v1`;
-  return createOpenAICompatible({
-    name: "ollama",
-    baseURL: url,
-    headers: {
-      Authorization: "Bearer ollama",
-    },
-  });
-}
