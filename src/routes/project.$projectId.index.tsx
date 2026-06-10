@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/project/$projectId")({
+export const Route = createFileRoute("/project/$projectId/")({
   head: ({ params }) => ({
     meta: [
       { title: "OA Workspace · " + params.projectId.slice(0, 8) },
