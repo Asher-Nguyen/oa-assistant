@@ -10,6 +10,7 @@ import {
   computePrefill,
   missingRequired,
 } from "@/lib/oa-analysis-state";
+import { PromptPreview } from "@/components/PromptPreview";
 
 export function ExpertInputForm({
   project,
