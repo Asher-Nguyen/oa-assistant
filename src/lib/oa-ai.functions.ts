@@ -41,7 +41,6 @@ export const oaGuidedTurn = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    requireSameOrigin();
     const { provider, model } = getProviderAndModel();
     const system = buildGuidedSystemPrompt(data.project as never, data.stepId);
     const messages =
@@ -67,7 +66,6 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    requireSameOrigin();
     const { provider, model } = getProviderAndModel();
     const expert =
       data.mode === "expert" ? buildExpertArtifactPrompt(data.project as never, data.stepId) : null;
@@ -82,7 +80,6 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
 export const oaFinalReport = createServerFn({ method: "POST" })
   .inputValidator(z.object({ project: ProjectSchema }))
   .handler(async ({ data }) => {
-    requireSameOrigin();
     const { provider, model } = getProviderAndModel();
     const prompt = buildFinalReportPrompt(data.project as never);
     const result = await generateText({
