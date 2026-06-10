@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 
 import { AppShell } from "@/components/AppShell";
 import { StepBadge } from "@/components/StepBadge";
+import { ExpertInputForm } from "@/components/ExpertInputForm";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
@@ -309,6 +310,16 @@ function GuidedStep({
         </div>
       </div>
 
+      {/* Expert Input Form (Steps 1–5) — fields match AI prompt inputs exactly */}
+      {expertAvailable && (
+        <ExpertInputForm
+          project={project}
+          stepId={stepId}
+          running={generatingExpert}
+          onRun={handleGenerateExpert}
+        />
+      )}
+
       {/* Chat */}
       <section className="ring-grid rounded-lg bg-card">
         <header className="border-b border-border p-4">
@@ -369,14 +380,14 @@ function GuidedStep({
             <h3 className="font-display text-xl font-semibold">Step {stepId} Output</h3>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={handleGenerate} disabled={generating || !complete} className="gap-2">
+            <Button onClick={handleGenerate} disabled={generating} className="gap-2">
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
               {output ? "Regenerate" : "Generate Artifact"}
             </Button>
             {expertAvailable && (
               <Button
                 onClick={handleGenerateExpert}
-                disabled={generatingExpert || !complete}
+                disabled={generatingExpert}
                 variant="secondary"
                 className="gap-2"
               >
@@ -392,8 +403,8 @@ function GuidedStep({
           </div>
         </header>
 
-        {/* View toggle (only when both outputs exist) */}
-        {expertAvailable && expertOutput && output && (
+        {/* View toggle — always visible for expert-enabled steps */}
+        {expertAvailable && (
           <div className="flex gap-1 border-b border-border bg-surface/40 p-2">
             <button
               onClick={() => setView("standard")}
