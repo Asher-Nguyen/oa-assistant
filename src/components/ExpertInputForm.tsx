@@ -10,6 +10,7 @@ import {
   computePrefill,
   missingRequired,
 } from "@/lib/oa-analysis-state";
+import { PromptPreview } from "@/components/PromptPreview";
 
 export function ExpertInputForm({
   project,
@@ -108,10 +109,13 @@ export function ExpertInputForm({
             Outputs from prior steps auto-flow into this step and remain editable.
           </p>
         </div>
-        <Button onClick={persistAndRun} disabled={running} className="gap-2">
-          {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
-          Run Expert AI Analysis
-        </Button>
+        <div className="flex items-center gap-1">
+          <PromptPreview stepId={stepId} values={values} />
+          <Button onClick={persistAndRun} disabled={running} className="gap-2">
+            {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+            Run Expert AI Analysis
+          </Button>
+        </div>
       </header>
 
       {missing.length > 0 && (
