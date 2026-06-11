@@ -214,6 +214,7 @@ function GuidedStep({
         data: { project, stepId, mode: "expert", ...(customPrompt ? { customPrompt } : {}) },
       });
       setExpertOutput(res.artifact);
+      setExpertSaved(false);
       setView("expert");
       toast.success("Expert AI Analysis ready");
     } catch (e: unknown) {
