@@ -147,8 +147,11 @@ function GuidedPage() {
             project={project}
             stepId={stepId}
             initialOutput={stepState?.output}
+            initialExpertOutput={stepState?.expertOutput}
+            initialNotes={stepState?.notes}
             onAdvance={() => setStepId((s) => Math.min(8, s + 1))}
           />
+
         </main>
       </div>
     </AppShell>
