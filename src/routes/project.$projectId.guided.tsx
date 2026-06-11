@@ -418,15 +418,3 @@ function FinalReportCard({ project }: { project: Project }) {
     </div>
   );
 }
-
-function captureFieldsFromChat(projectId: string, stepId: number, chat: ChatMessage[]) {
-  const updates: Record<string, string> = {};
-  for (let i = 0; i < chat.length - 1; i++) {
-    const a = chat[i];
-    const u = chat[i + 1];
-    if (a.role !== "assistant" || u.role !== "user") continue;
-    const m = a.content.match(/\[field:([a-zA-Z0-9_]+)\]/);
-    if (m) updates[m[1]] = u.content.trim();
-  }
-  if (Object.keys(updates).length) mergeStepInputs(projectId, stepId, updates);
-}
