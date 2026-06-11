@@ -144,9 +144,7 @@ function GuidedPage() {
             key={stepId}
             project={project}
             stepId={stepId}
-            initialChat={stepState?.chat ?? []}
             initialOutput={stepState?.output}
-            initialComplete={!!stepState?.guidedComplete}
             onAdvance={() => setStepId((s) => Math.min(8, s + 1))}
           />
         </main>
