@@ -277,7 +277,8 @@ function GuidedStep({
         />
       )}
 
-      {/* Artifact */}
+      {/* Artifact — Steps 1–5 only */}
+      {expertAvailable && (
       <section className="ring-grid rounded-lg bg-card">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div>
@@ -289,17 +290,15 @@ function GuidedStep({
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
               {output ? "Regenerate" : "Generate Artifact"}
             </Button>
-            {expertAvailable && (
-              <Button
-                onClick={() => handleGenerateExpert(project.steps[stepId]?.expertPrompt)}
-                disabled={generatingExpert}
-                variant="secondary"
-                className="gap-2"
-              >
-                {generatingExpert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
-                {expertOutput ? "Re-run Expert AI Analysis" : "Run Expert AI Analysis"}
-              </Button>
-            )}
+            <Button
+              onClick={() => handleGenerateExpert(project.steps[stepId]?.expertPrompt)}
+              disabled={generatingExpert}
+              variant="secondary"
+              className="gap-2"
+            >
+              {generatingExpert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+              {expertOutput ? "Re-run Expert AI Analysis" : "Run Expert AI Analysis"}
+            </Button>
             {output && stepId < 8 && (
               <Button variant="outline" onClick={onAdvance} className="gap-2">
                 Next Step <ArrowRight className="h-4 w-4" />
@@ -308,33 +307,31 @@ function GuidedStep({
           </div>
         </header>
 
-        {/* View toggle — always visible for expert-enabled steps */}
-        {expertAvailable && (
-          <div className="flex gap-1 border-b border-border bg-surface/40 p-2">
-            <button
-              onClick={() => setView("standard")}
-              className={
-                "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
-                (view === "standard"
-                  ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
-                  : "text-muted-foreground hover:text-foreground")
-              }
-            >
-              Structured Input Summary
-            </button>
-            <button
-              onClick={() => setView("expert")}
-              className={
-                "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
-                (view === "expert"
-                  ? "bg-accent/20 text-foreground ring-1 ring-accent/40"
-                  : "text-muted-foreground hover:text-foreground")
-              }
-            >
-              Expert AI Analysis
-            </button>
-          </div>
-        )}
+        {/* View toggle */}
+        <div className="flex gap-1 border-b border-border bg-surface/40 p-2">
+          <button
+            onClick={() => setView("standard")}
+            className={
+              "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
+              (view === "standard"
+                ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
+                : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            Structured Input Summary
+          </button>
+          <button
+            onClick={() => setView("expert")}
+            className={
+              "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
+              (view === "expert"
+                ? "bg-accent/20 text-foreground ring-1 ring-accent/40"
+                : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            Expert AI Analysis
+          </button>
+        </div>
 
         <div className="p-5">
           {!output && !expertOutput && !generating && !generatingExpert && (
@@ -355,7 +352,6 @@ function GuidedStep({
             </div>
           )}
 
-          {/* Expert view */}
           {view === "expert" && expertOutput && !generating && !generatingExpert && (
             <>
               <div className="mb-3 flex items-center justify-between">
@@ -392,8 +388,6 @@ function GuidedStep({
             </>
           )}
 
-
-          {/* Standard view */}
           {view === "standard" && output && !editing && !generating && (
             <>
               <article className="prose-oa max-w-none whitespace-pre-wrap font-mono text-[13px] leading-6 text-foreground">
@@ -426,6 +420,7 @@ function GuidedStep({
           )}
         </div>
       </section>
+      )}
 
       {/* Analyst Notes — Steps 6–8 */}
       {notesAvailable && (
