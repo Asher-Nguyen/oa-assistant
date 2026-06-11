@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectProjectIdRouteImport } from './routes/project.$projectId'
 import { Route as ProjectProjectIdIndexRouteImport } from './routes/project.$projectId.index'
+import { Route as ProjectProjectIdReportRouteImport } from './routes/project.$projectId.report'
 import { Route as ProjectProjectIdGuidedRouteImport } from './routes/project.$projectId.guided'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const ProjectProjectIdIndexRoute = ProjectProjectIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProjectProjectIdRoute,
 } as any)
+const ProjectProjectIdReportRoute = ProjectProjectIdReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => ProjectProjectIdRoute,
+} as any)
 const ProjectProjectIdGuidedRoute = ProjectProjectIdGuidedRouteImport.update({
   id: '/guided',
   path: '/guided',
@@ -39,11 +45,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/project/$projectId': typeof ProjectProjectIdRouteWithChildren
   '/project/$projectId/guided': typeof ProjectProjectIdGuidedRoute
+  '/project/$projectId/report': typeof ProjectProjectIdReportRoute
   '/project/$projectId/': typeof ProjectProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/project/$projectId/guided': typeof ProjectProjectIdGuidedRoute
+  '/project/$projectId/report': typeof ProjectProjectIdReportRoute
   '/project/$projectId': typeof ProjectProjectIdIndexRoute
 }
 export interface FileRoutesById {
@@ -51,6 +59,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/project/$projectId': typeof ProjectProjectIdRouteWithChildren
   '/project/$projectId/guided': typeof ProjectProjectIdGuidedRoute
+  '/project/$projectId/report': typeof ProjectProjectIdReportRoute
   '/project/$projectId/': typeof ProjectProjectIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -59,14 +68,20 @@ export interface FileRouteTypes {
     | '/'
     | '/project/$projectId'
     | '/project/$projectId/guided'
+    | '/project/$projectId/report'
     | '/project/$projectId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/project/$projectId/guided' | '/project/$projectId'
+  to:
+    | '/'
+    | '/project/$projectId/guided'
+    | '/project/$projectId/report'
+    | '/project/$projectId'
   id:
     | '__root__'
     | '/'
     | '/project/$projectId'
     | '/project/$projectId/guided'
+    | '/project/$projectId/report'
     | '/project/$projectId/'
   fileRoutesById: FileRoutesById
 }
@@ -98,6 +113,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectProjectIdIndexRouteImport
       parentRoute: typeof ProjectProjectIdRoute
     }
+    '/project/$projectId/report': {
+      id: '/project/$projectId/report'
+      path: '/report'
+      fullPath: '/project/$projectId/report'
+      preLoaderRoute: typeof ProjectProjectIdReportRouteImport
+      parentRoute: typeof ProjectProjectIdRoute
+    }
     '/project/$projectId/guided': {
       id: '/project/$projectId/guided'
       path: '/guided'
@@ -110,11 +132,13 @@ declare module '@tanstack/react-router' {
 
 interface ProjectProjectIdRouteChildren {
   ProjectProjectIdGuidedRoute: typeof ProjectProjectIdGuidedRoute
+  ProjectProjectIdReportRoute: typeof ProjectProjectIdReportRoute
   ProjectProjectIdIndexRoute: typeof ProjectProjectIdIndexRoute
 }
 
 const ProjectProjectIdRouteChildren: ProjectProjectIdRouteChildren = {
   ProjectProjectIdGuidedRoute: ProjectProjectIdGuidedRoute,
+  ProjectProjectIdReportRoute: ProjectProjectIdReportRoute,
   ProjectProjectIdIndexRoute: ProjectProjectIdIndexRoute,
 }
 
@@ -128,3 +152,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
