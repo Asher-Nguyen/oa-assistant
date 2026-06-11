@@ -132,7 +132,12 @@ function GuidedPage() {
             </div>
             <nav className="space-y-1">
               {OA_STEPS.map((s) => {
-                const state: "complete" | "active" | "todo" = project.steps[s.id]?.output
+                const st = project.steps[s.id];
+                const complete =
+                  s.id <= 5
+                    ? !!(st?.output || st?.expertOutput)
+                    : !!(st?.notes && st.notes.trim());
+                const state: "complete" | "active" | "todo" = complete
                   ? "complete"
                   : stepId === s.id
                     ? "active"
