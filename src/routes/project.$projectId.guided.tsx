@@ -13,6 +13,8 @@ import { OA_STEPS, getStep } from "@/lib/oa-steps";
 import {
   getCompletionPercent,
   saveStepOutput,
+  saveStepExpertOutput,
+  saveStepNotes,
   saveFinalReport,
   useHydrated,
   useProject,
