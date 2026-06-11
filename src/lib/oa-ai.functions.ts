@@ -32,30 +32,6 @@ function getProviderAndModel() {
 }
 
 
-export const oaGuidedTurn = createServerFn({ method: "POST" })
-  .inputValidator(
-    z.object({
-      project: ProjectSchema,
-      stepId: z.number().int().min(1).max(8),
-      messages: z.array(MessageSchema).max(60),
-    }),
-  )
-  .handler(async ({ data }) => {
-    const { provider, model } = getProviderAndModel();
-    const system = buildGuidedSystemPrompt(data.project as never, data.stepId);
-    const messages =
-      data.messages.length === 0
-        ? [{ role: "user" as const, content: "Begin Step " + data.stepId + ". Ask your first question." }]
-        : data.messages;
-
-    const result = await generateText({
-      model: provider(model),
-      system,
-      messages,
-    });
-    const text = result.text.trim();
-    return { text, complete: /^STEP_COMPLETE\s*$/i.test(text) };
-  });
 
 export const oaGenerateArtifact = createServerFn({ method: "POST" })
   .inputValidator(
