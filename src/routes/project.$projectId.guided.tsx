@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import { AppShell } from "@/components/AppShell";
@@ -12,17 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { OA_STEPS, getStep } from "@/lib/oa-steps";
 import {
   getCompletionPercent,
-  mergeStepInputs,
-  saveStepChat,
   saveStepOutput,
   saveFinalReport,
   useHydrated,
   useProject,
-  type ChatMessage,
   type Project,
 } from "@/lib/projects-store";
 import {
-  oaGuidedTurn,
   oaGenerateArtifact,
   oaFinalReport,
 } from "@/lib/oa-ai.functions";
@@ -33,7 +29,6 @@ import {
   ChevronLeft,
   FileText,
   Loader2,
-  Send,
   Sparkles,
   Wand2,
 } from "lucide-react";
@@ -149,9 +144,7 @@ function GuidedPage() {
             key={stepId}
             project={project}
             stepId={stepId}
-            initialChat={stepState?.chat ?? []}
             initialOutput={stepState?.output}
-            initialComplete={!!stepState?.guidedComplete}
             onAdvance={() => setStepId((s) => Math.min(8, s + 1))}
           />
         </main>
@@ -163,26 +156,17 @@ function GuidedPage() {
 function GuidedStep({
   project,
   stepId,
-  initialChat,
   initialOutput,
-  initialComplete,
   onAdvance,
 }: {
   project: Project;
   stepId: number;
-  initialChat: ChatMessage[];
   initialOutput?: string;
-  initialComplete: boolean;
   onAdvance: () => void;
 }) {
   const step = getStep(stepId)!;
-  const guidedTurn = useServerFn(oaGuidedTurn);
   const generateArt = useServerFn(oaGenerateArtifact);
 
-  const [chat, setChat] = useState<ChatMessage[]>(initialChat);
-  const [input, setInput] = useState("");
-  const [thinking, setThinking] = useState(false);
-  const [complete, setComplete] = useState(initialComplete);
   const [output, setOutput] = useState<string | undefined>(initialOutput);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -191,66 +175,6 @@ function GuidedStep({
   const [generatingExpert, setGeneratingExpert] = useState(false);
   const [view, setView] = useState<"standard" | "expert">("standard");
   const expertAvailable = stepId >= 1 && stepId <= 5;
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const bootRef = useRef(false);
-
-  // Auto-scroll
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [chat, thinking]);
-
-  // Auto-kick first question if no chat yet
-  useEffect(() => {
-    if (bootRef.current) return;
-    bootRef.current = true;
-    if (chat.length === 0 && !complete) {
-      void runTurn([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function runTurn(history: ChatMessage[]) {
-    setThinking(true);
-    try {
-      const res = await guidedTurn({ data: { project, stepId, messages: history } });
-      const assistantMsg: ChatMessage = { role: "assistant", content: res.text };
-      const next = [...history, assistantMsg];
-      setChat(next);
-      saveStepChat(project.id, stepId, next, res.complete);
-      if (res.complete) {
-        setComplete(true);
-        captureFieldsFromChat(project.id, stepId, next);
-        toast.success("Intake complete — ready to generate artifact");
-      } else {
-        captureFieldsFromChat(project.id, stepId, next);
-      }
-    } catch (e: unknown) {
-      // Bypassed connection requirements and simplified error checks
-      const msg = e instanceof Error ? e.message : "AI request failed";
-      toast.error(msg.includes("429") ? "Rate limit — try again" : "AI Gateway connecting... processing response");
-      
-      // Fallback mechanism to ensure UI stays active and unblocked
-      if (history.length === 0) {
-        const fallbackMsg: ChatMessage = { 
-          role: "assistant", 
-          content: "Welcome to Guided Mode. I will assist you through this step. What problem statement details can you share first?" 
-        };
-        setChat([fallbackMsg]);
-      }
-    } finally {
-      setThinking(false);
-    }
-  }
-
-  async function handleSend() {
-    if (!input.trim() || thinking) return;
-    const userMsg: ChatMessage = { role: "user", content: input.trim() };
-    const next = [...chat, userMsg];
-    setChat(next);
-    setInput("");
-    saveStepChat(project.id, stepId, next);
-    await runTurn(next);
-  }
 
   async function handleGenerate() {
     setGenerating(true);
@@ -270,10 +194,12 @@ function GuidedStep({
     }
   }
 
-  async function handleGenerateExpert() {
+  async function handleGenerateExpert(customPrompt?: string) {
     setGeneratingExpert(true);
     try {
-      const res = await generateArt({ data: { project, stepId, mode: "expert" } });
+      const res = await generateArt({
+        data: { project, stepId, mode: "expert", ...(customPrompt ? { customPrompt } : {}) },
+      });
       setExpertOutput(res.artifact);
       setView("expert");
       toast.success("Expert AI Analysis ready");
@@ -304,9 +230,7 @@ function GuidedStep({
             <h2 className="font-display text-2xl font-semibold">{step.name}</h2>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{step.description}</p>
           </div>
-          <Badge variant="outline" className="font-mono text-[10px]">
-            {complete ? "INTAKE COMPLETE" : "INTAKE"}
-          </Badge>
+          <Badge variant="outline" className="font-mono text-[10px]">INTAKE</Badge>
         </div>
       </div>
 
@@ -316,61 +240,9 @@ function GuidedStep({
           project={project}
           stepId={stepId}
           running={generatingExpert}
-          onRun={handleGenerateExpert}
+          onRun={(prompt) => handleGenerateExpert(prompt)}
         />
       )}
-
-      {/* Chat */}
-      <section className="ring-grid rounded-lg bg-card">
-        <header className="border-b border-border p-4">
-          <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            Senior Analyst · Q&A
-          </div>
-        </header>
-        <div
-          ref={scrollRef}
-          className="max-h-[420px] min-h-[260px] space-y-4 overflow-y-auto p-5"
-        >
-          {chat.length === 0 && !thinking && (
-            <div className="py-10 text-center text-sm text-muted-foreground">
-              Senior analyst is preparing the first question…
-            </div>
-          )}
-          {chat.map((m, i) => (
-            <ChatBubble key={i} role={m.role} content={m.content} />
-          ))}
-          {thinking && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" /> Analyst thinking…
-            </div>
-          )}
-        </div>
-        {!complete && (
-          <div className="border-t border-border p-4">
-            <div className="flex gap-2">
-              <Textarea
-                rows={2}
-                placeholder="Type your answer…"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    void handleSend();
-                  }
-                }}
-                disabled={thinking}
-              />
-              <Button onClick={handleSend} disabled={thinking || !input.trim()} className="self-end gap-1">
-                <Send className="h-4 w-4" /> Send
-              </Button>
-            </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Hex/Ctrl + Enter to send.
-            </p>
-          </div>
-        )}
-      </section>
 
       {/* Artifact */}
       <section className="ring-grid rounded-lg bg-card">
@@ -386,7 +258,7 @@ function GuidedStep({
             </Button>
             {expertAvailable && (
               <Button
-                onClick={handleGenerateExpert}
+                onClick={() => handleGenerateExpert(project.steps[stepId]?.expertPrompt)}
                 disabled={generatingExpert}
                 variant="secondary"
                 className="gap-2"
@@ -436,9 +308,8 @@ function GuidedStep({
             <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
               <FileText className="h-8 w-8" />
               <p className="mt-3 max-w-xs text-sm">
-                {complete
-                  ? "Intake captured. Generate the formal Step " + stepId + " artifact, or run the Expert AI Analysis."
-                  : "Complete the guided Q&A above, then generate the artifact."}
+                Fill in the Expert Analysis Inputs above, then run the Expert AI Analysis
+                or generate the standard Step {stepId} artifact.
               </p>
             </div>
           )}
@@ -500,29 +371,6 @@ function GuidedStep({
   );
 }
 
-function ChatBubble({ role, content }: { role: "user" | "assistant"; content: string }) {
-  const isUser = role === "user";
-  const display = content.replace(/\[field:[a-zA-Z0-9_]+\]/g, "").trim();
-  return (
-    <div className={"flex " + (isUser ? "justify-end" : "justify-start")}>
-      <div
-        className={
-          "max-w-[85%] rounded-lg px-3 py-2 text-sm leading-6 " +
-          (isUser
-            ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
-            : "bg-surface text-foreground ring-1 ring-border")
-        }
-      >
-        {!isUser && (
-          <div className="mb-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            Sr. Analyst
-          </div>
-        )}
-        <div className="whitespace-pre-wrap">{display}</div>
-      </div>
-    </div>
-  );
-}
 
 function FinalReportCard({ project }: { project: Project }) {
   const finalFn = useServerFn(oaFinalReport);
@@ -569,16 +417,4 @@ function FinalReportCard({ project }: { project: Project }) {
       )}
     </div>
   );
-}
-
-function captureFieldsFromChat(projectId: string, stepId: number, chat: ChatMessage[]) {
-  const updates: Record<string, string> = {};
-  for (let i = 0; i < chat.length - 1; i++) {
-    const a = chat[i];
-    const u = chat[i + 1];
-    if (a.role !== "assistant" || u.role !== "user") continue;
-    const m = a.content.match(/\[field:([a-zA-Z0-9_]+)\]/);
-    if (m) updates[m[1]] = u.content.trim();
-  }
-  if (Object.keys(updates).length) mergeStepInputs(projectId, stepId, updates);
 }

@@ -8,6 +8,8 @@ export type StepState = {
   generatedAt?: string;
   chat?: ChatMessage[];
   guidedComplete?: boolean;
+  /** Analyst-edited Expert AI prompt for this step (overrides the rendered template). */
+  expertPrompt?: string;
 };
 
 export type Project = {
@@ -178,6 +180,23 @@ export function saveFinalReport(projectId: string, report: string) {
     ...p,
     finalReport: report,
     finalReportGeneratedAt: new Date().toISOString(),
+  }));
+}
+
+export function saveStepExpertPrompt(
+  projectId: string,
+  stepId: number,
+  expertPrompt: string | undefined,
+) {
+  updateProject(projectId, (p) => ({
+    ...p,
+    steps: {
+      ...p.steps,
+      [stepId]: {
+        ...(p.steps[stepId] || { inputs: {} }),
+        expertPrompt,
+      },
+    },
   }));
 }
 
