@@ -183,6 +183,23 @@ export function saveFinalReport(projectId: string, report: string) {
   }));
 }
 
+export function saveStepExpertPrompt(
+  projectId: string,
+  stepId: number,
+  expertPrompt: string | undefined,
+) {
+  updateProject(projectId, (p) => ({
+    ...p,
+    steps: {
+      ...p.steps,
+      [stepId]: {
+        ...(p.steps[stepId] || { inputs: {} }),
+        expertPrompt,
+      },
+    },
+  }));
+}
+
 export function getCompletionPercent(p: Project | undefined) {
   if (!p) return 0;
   const done = Object.values(p.steps).filter((s) => s?.output).length;
