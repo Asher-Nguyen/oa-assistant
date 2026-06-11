@@ -13,6 +13,8 @@ import { OA_STEPS, getStep } from "@/lib/oa-steps";
 import {
   getCompletionPercent,
   saveStepOutput,
+  saveStepExpertOutput,
+  saveStepNotes,
   saveFinalReport,
   useHydrated,
   useProject,
@@ -145,8 +147,11 @@ function GuidedPage() {
             project={project}
             stepId={stepId}
             initialOutput={stepState?.output}
+            initialExpertOutput={stepState?.expertOutput}
+            initialNotes={stepState?.notes}
             onAdvance={() => setStepId((s) => Math.min(8, s + 1))}
           />
+
         </main>
       </div>
     </AppShell>
@@ -157,11 +162,15 @@ function GuidedStep({
   project,
   stepId,
   initialOutput,
+  initialExpertOutput,
+  initialNotes,
   onAdvance,
 }: {
   project: Project;
   stepId: number;
   initialOutput?: string;
+  initialExpertOutput?: string;
+  initialNotes?: string;
   onAdvance: () => void;
 }) {
   const step = getStep(stepId)!;
@@ -171,10 +180,14 @@ function GuidedStep({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [expertOutput, setExpertOutput] = useState<string | undefined>(undefined);
+  const [expertOutput, setExpertOutput] = useState<string | undefined>(initialExpertOutput);
+  const [expertSaved, setExpertSaved] = useState<boolean>(!!initialExpertOutput);
   const [generatingExpert, setGeneratingExpert] = useState(false);
-  const [view, setView] = useState<"standard" | "expert">("standard");
+  const [view, setView] = useState<"standard" | "expert">(initialExpertOutput ? "expert" : "standard");
+  const [notesDraft, setNotesDraft] = useState<string>(initialNotes ?? "");
   const expertAvailable = stepId >= 1 && stepId <= 5;
+  const notesAvailable = stepId >= 6 && stepId <= 8;
+
 
   async function handleGenerate() {
     setGenerating(true);
@@ -201,6 +214,7 @@ function GuidedStep({
         data: { project, stepId, mode: "expert", ...(customPrompt ? { customPrompt } : {}) },
       });
       setExpertOutput(res.artifact);
+      setExpertSaved(false);
       setView("expert");
       toast.success("Expert AI Analysis ready");
     } catch (e: unknown) {
@@ -325,14 +339,40 @@ function GuidedStep({
           {/* Expert view */}
           {view === "expert" && expertOutput && !generating && !generatingExpert && (
             <>
-              <div className="mb-3 font-mono text-[10px] uppercase tracking-wider text-accent">
-                Expert AI Analysis · Senior MFC Analyst Framework
+              <div className="mb-3 flex items-center justify-between">
+                <div className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                  Expert AI Analysis · Senior MFC Analyst Framework
+                </div>
+                <div className="flex items-center gap-2">
+                  {expertSaved ? (
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                      Saved
+                    </span>
+                  ) : (
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-amber-500">
+                      Unsaved
+                    </span>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => {
+                      saveStepExpertOutput(project.id, stepId, expertOutput);
+                      setExpertSaved(true);
+                      toast.success("Expert output saved");
+                    }}
+                  >
+                    <Check className="h-4 w-4" /> Save Expert Output
+                  </Button>
+                </div>
               </div>
               <article className="prose-oa max-w-none whitespace-pre-wrap font-mono text-[13px] leading-6 text-foreground">
                 {expertOutput}
               </article>
             </>
           )}
+
 
           {/* Standard view */}
           {view === "standard" && output && !editing && !generating && (
@@ -367,9 +407,43 @@ function GuidedStep({
           )}
         </div>
       </section>
+
+      {/* Analyst Notes — Steps 6–8 */}
+      {notesAvailable && (
+        <section className="ring-grid rounded-lg bg-card p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className="font-mono text-[11px] uppercase tracking-wider text-accent">
+                Analyst Notes
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Capture observations, decisions, and follow-ups for Step {stepId}.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                saveStepNotes(project.id, stepId, notesDraft);
+                toast.success("Notes saved");
+              }}
+            >
+              <Check className="h-4 w-4" /> Save Notes
+            </Button>
+          </div>
+          <Textarea
+            rows={10}
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            placeholder="Analyst notes…"
+            className="font-mono text-xs"
+          />
+        </section>
+      )}
     </div>
   );
 }
+
 
 
 function FinalReportCard({ project }: { project: Project }) {

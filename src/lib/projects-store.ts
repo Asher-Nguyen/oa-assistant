@@ -10,6 +10,12 @@ export type StepState = {
   guidedComplete?: boolean;
   /** Analyst-edited Expert AI prompt for this step (overrides the rendered template). */
   expertPrompt?: string;
+  /** Persisted Expert AI Analysis output for this step. */
+  expertOutput?: string;
+  expertOutputSavedAt?: string;
+  /** Free-form analyst notes (used in Steps 6–8). */
+  notes?: string;
+  notesSavedAt?: string;
 };
 
 export type Project = {
@@ -195,6 +201,38 @@ export function saveStepExpertPrompt(
       [stepId]: {
         ...(p.steps[stepId] || { inputs: {} }),
         expertPrompt,
+      },
+    },
+  }));
+}
+
+export function saveStepExpertOutput(
+  projectId: string,
+  stepId: number,
+  expertOutput: string,
+) {
+  updateProject(projectId, (p) => ({
+    ...p,
+    steps: {
+      ...p.steps,
+      [stepId]: {
+        ...(p.steps[stepId] || { inputs: {} }),
+        expertOutput,
+        expertOutputSavedAt: new Date().toISOString(),
+      },
+    },
+  }));
+}
+
+export function saveStepNotes(projectId: string, stepId: number, notes: string) {
+  updateProject(projectId, (p) => ({
+    ...p,
+    steps: {
+      ...p.steps,
+      [stepId]: {
+        ...(p.steps[stepId] || { inputs: {} }),
+        notes,
+        notesSavedAt: new Date().toISOString(),
       },
     },
   }));
