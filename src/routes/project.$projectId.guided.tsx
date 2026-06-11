@@ -162,11 +162,15 @@ function GuidedStep({
   project,
   stepId,
   initialOutput,
+  initialExpertOutput,
+  initialNotes,
   onAdvance,
 }: {
   project: Project;
   stepId: number;
   initialOutput?: string;
+  initialExpertOutput?: string;
+  initialNotes?: string;
   onAdvance: () => void;
 }) {
   const step = getStep(stepId)!;
@@ -176,10 +180,14 @@ function GuidedStep({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [expertOutput, setExpertOutput] = useState<string | undefined>(undefined);
+  const [expertOutput, setExpertOutput] = useState<string | undefined>(initialExpertOutput);
+  const [expertSaved, setExpertSaved] = useState<boolean>(!!initialExpertOutput);
   const [generatingExpert, setGeneratingExpert] = useState(false);
-  const [view, setView] = useState<"standard" | "expert">("standard");
+  const [view, setView] = useState<"standard" | "expert">(initialExpertOutput ? "expert" : "standard");
+  const [notesDraft, setNotesDraft] = useState<string>(initialNotes ?? "");
   const expertAvailable = stepId >= 1 && stepId <= 5;
+  const notesAvailable = stepId >= 6 && stepId <= 8;
+
 
   async function handleGenerate() {
     setGenerating(true);
