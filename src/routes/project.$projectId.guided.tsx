@@ -88,7 +88,7 @@ function GuidedPage() {
     );
   }
 
-  const pct = getCompletionPercent(project);
+  const pct = computeCompletionPercent(project);
   const step = getStep(stepId)!;
   const stepState = project.steps[stepId];
 
