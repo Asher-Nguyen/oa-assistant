@@ -8,6 +8,8 @@ export type StepState = {
   generatedAt?: string;
   chat?: ChatMessage[];
   guidedComplete?: boolean;
+  /** Analyst-edited Expert AI prompt for this step (overrides the rendered template). */
+  expertPrompt?: string;
 };
 
 export type Project = {
