@@ -10,6 +10,12 @@ export type StepState = {
   guidedComplete?: boolean;
   /** Analyst-edited Expert AI prompt for this step (overrides the rendered template). */
   expertPrompt?: string;
+  /** Persisted Expert AI Analysis output for this step. */
+  expertOutput?: string;
+  expertOutputSavedAt?: string;
+  /** Free-form analyst notes (used in Steps 6–8). */
+  notes?: string;
+  notesSavedAt?: string;
 };
 
 export type Project = {
