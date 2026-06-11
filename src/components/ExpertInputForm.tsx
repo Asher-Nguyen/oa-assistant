@@ -20,7 +20,8 @@ export function ExpertInputForm({
 }: {
   project: Project;
   stepId: number;
-  onRun: () => void;
+  /** Run with a specific prompt (edited or rendered). */
+  onRun: (prompt?: string) => void;
   running: boolean;
 }) {
   const fields = EXPERT_FORMS[stepId];
