@@ -63,18 +63,24 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
       project: ProjectSchema,
       stepId: z.number().int().min(1).max(8),
       mode: z.enum(["standard", "expert"]).default("standard"),
+      customPrompt: z.string().min(1).max(20000).optional(),
     }),
   )
   .handler(async ({ data }) => {
     const { provider, model } = getProviderAndModel();
-    const expert =
-      data.mode === "expert" ? buildExpertArtifactPrompt(data.project as never, data.stepId) : null;
-    const prompt = expert ?? buildArtifactPrompt(data.project as never, data.stepId);
+    let prompt: string;
+    if (data.customPrompt && data.mode === "expert") {
+      prompt = data.customPrompt;
+    } else if (data.mode === "expert") {
+      prompt = buildExpertArtifactPrompt(data.project as never, data.stepId);
+    } else {
+      prompt = buildArtifactPrompt(data.project as never, data.stepId);
+    }
     const result = await generateText({
       model: provider(model),
       prompt,
     });
-    return { artifact: result.text, mode: expert ? "expert" : "standard" };
+    return { artifact: result.text, mode: data.mode };
   });
 
 export const oaFinalReport = createServerFn({ method: "POST" })
