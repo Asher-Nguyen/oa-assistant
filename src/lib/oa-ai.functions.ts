@@ -72,7 +72,9 @@ export const oaGenerateArtifact = createServerFn({ method: "POST" })
     if (data.customPrompt && data.mode === "expert") {
       prompt = data.customPrompt;
     } else if (data.mode === "expert") {
-      prompt = buildExpertArtifactPrompt(data.project as never, data.stepId);
+      prompt =
+        buildExpertArtifactPrompt(data.project as never, data.stepId) ??
+        buildArtifactPrompt(data.project as never, data.stepId);
     } else {
       prompt = buildArtifactPrompt(data.project as never, data.stepId);
     }
