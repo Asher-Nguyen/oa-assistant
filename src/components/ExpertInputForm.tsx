@@ -111,7 +111,18 @@ export function ExpertInputForm({
           </p>
         </div>
         <div className="flex items-center gap-1">
-          <PromptPreview stepId={stepId} values={values} />
+          <PromptEditor
+            projectId={project.id}
+            stepId={stepId}
+            values={values}
+            savedPrompt={project.steps[stepId]?.expertPrompt}
+            onRun={(prompt) => {
+              // Persist field values first so server has identical context.
+              mergeStepInputs(project.id, stepId, values);
+              setTimeout(() => onRun(prompt), 0);
+            }}
+            running={running}
+          />
           <Button onClick={persistAndRun} disabled={running} className="gap-2">
             {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
             Run Expert AI Analysis
