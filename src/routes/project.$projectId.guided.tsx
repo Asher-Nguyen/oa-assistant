@@ -9,9 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { OA_STEPS, getStep } from "@/lib/oa-steps";
 import {
-  getCompletionPercent,
   saveStepOutput,
   saveStepExpertOutput,
   saveStepNotes,
@@ -20,10 +27,8 @@ import {
   useProject,
   type Project,
 } from "@/lib/projects-store";
-import {
-  oaGenerateArtifact,
-  oaFinalReport,
-} from "@/lib/oa-ai.functions";
+import { oaGenerateArtifact } from "@/lib/oa-ai.functions";
+import { buildProjectReport, type ReportKind } from "@/lib/report-builder";
 import {
   ArrowRight,
   Brain,
@@ -35,6 +40,20 @@ import {
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
+
+function computeCompletionPercent(p: Project): number {
+  let done = 0;
+  for (const s of OA_STEPS) {
+    const st = p.steps[s.id];
+    if (!st) continue;
+    if (s.id <= 5) {
+      if (st.output || st.expertOutput) done += 1;
+    } else if ((st.notes || "").trim()) {
+      done += 1;
+    }
+  }
+  return Math.round((done / 8) * 100);
+}
 
 export const Route = createFileRoute("/project/$projectId/guided")({
   head: () => ({ meta: [{ title: "OA Guided Mode" }] }),
