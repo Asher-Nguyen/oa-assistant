@@ -206,6 +206,38 @@ export function saveStepExpertPrompt(
   }));
 }
 
+export function saveStepExpertOutput(
+  projectId: string,
+  stepId: number,
+  expertOutput: string,
+) {
+  updateProject(projectId, (p) => ({
+    ...p,
+    steps: {
+      ...p.steps,
+      [stepId]: {
+        ...(p.steps[stepId] || { inputs: {} }),
+        expertOutput,
+        expertOutputSavedAt: new Date().toISOString(),
+      },
+    },
+  }));
+}
+
+export function saveStepNotes(projectId: string, stepId: number, notes: string) {
+  updateProject(projectId, (p) => ({
+    ...p,
+    steps: {
+      ...p.steps,
+      [stepId]: {
+        ...(p.steps[stepId] || { inputs: {} }),
+        notes,
+        notesSavedAt: new Date().toISOString(),
+      },
+    },
+  }));
+}
+
 export function getCompletionPercent(p: Project | undefined) {
   if (!p) return 0;
   const done = Object.values(p.steps).filter((s) => s?.output).length;
