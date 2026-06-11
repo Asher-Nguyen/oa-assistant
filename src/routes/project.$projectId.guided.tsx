@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 
 import { AppShell } from "@/components/AppShell";
@@ -12,17 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { OA_STEPS, getStep } from "@/lib/oa-steps";
 import {
   getCompletionPercent,
-  mergeStepInputs,
-  saveStepChat,
   saveStepOutput,
   saveFinalReport,
   useHydrated,
   useProject,
-  type ChatMessage,
   type Project,
 } from "@/lib/projects-store";
 import {
-  oaGuidedTurn,
   oaGenerateArtifact,
   oaFinalReport,
 } from "@/lib/oa-ai.functions";
@@ -33,7 +29,6 @@ import {
   ChevronLeft,
   FileText,
   Loader2,
-  Send,
   Sparkles,
   Wand2,
 } from "lucide-react";
