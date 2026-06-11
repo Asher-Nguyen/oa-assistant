@@ -9,9 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { OA_STEPS, getStep } from "@/lib/oa-steps";
 import {
-  getCompletionPercent,
   saveStepOutput,
   saveStepExpertOutput,
   saveStepNotes,
@@ -20,10 +27,8 @@ import {
   useProject,
   type Project,
 } from "@/lib/projects-store";
-import {
-  oaGenerateArtifact,
-  oaFinalReport,
-} from "@/lib/oa-ai.functions";
+import { oaGenerateArtifact } from "@/lib/oa-ai.functions";
+import { buildProjectReport, type ReportKind } from "@/lib/report-builder";
 import {
   ArrowRight,
   Brain,
@@ -35,6 +40,20 @@ import {
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
+
+function computeCompletionPercent(p: Project): number {
+  let done = 0;
+  for (const s of OA_STEPS) {
+    const st = p.steps[s.id];
+    if (!st) continue;
+    if (s.id <= 5) {
+      if (st.output || st.expertOutput) done += 1;
+    } else if ((st.notes || "").trim()) {
+      done += 1;
+    }
+  }
+  return Math.round((done / 8) * 100);
+}
 
 export const Route = createFileRoute("/project/$projectId/guided")({
   head: () => ({ meta: [{ title: "OA Guided Mode" }] }),
@@ -69,7 +88,7 @@ function GuidedPage() {
     );
   }
 
-  const pct = getCompletionPercent(project);
+  const pct = computeCompletionPercent(project);
   const step = getStep(stepId)!;
   const stepState = project.steps[stepId];
 
@@ -113,7 +132,12 @@ function GuidedPage() {
             </div>
             <nav className="space-y-1">
               {OA_STEPS.map((s) => {
-                const state: "complete" | "active" | "todo" = project.steps[s.id]?.output
+                const st = project.steps[s.id];
+                const complete =
+                  s.id <= 5
+                    ? !!(st?.output || st?.expertOutput)
+                    : !!(st?.notes && st.notes.trim());
+                const state: "complete" | "active" | "todo" = complete
                   ? "complete"
                   : stepId === s.id
                     ? "active"
@@ -258,7 +282,8 @@ function GuidedStep({
         />
       )}
 
-      {/* Artifact */}
+      {/* Artifact — Steps 1–5 only */}
+      {expertAvailable && (
       <section className="ring-grid rounded-lg bg-card">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5">
           <div>
@@ -270,17 +295,15 @@ function GuidedStep({
               {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
               {output ? "Regenerate" : "Generate Artifact"}
             </Button>
-            {expertAvailable && (
-              <Button
-                onClick={() => handleGenerateExpert(project.steps[stepId]?.expertPrompt)}
-                disabled={generatingExpert}
-                variant="secondary"
-                className="gap-2"
-              >
-                {generatingExpert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
-                {expertOutput ? "Re-run Expert AI Analysis" : "Run Expert AI Analysis"}
-              </Button>
-            )}
+            <Button
+              onClick={() => handleGenerateExpert(project.steps[stepId]?.expertPrompt)}
+              disabled={generatingExpert}
+              variant="secondary"
+              className="gap-2"
+            >
+              {generatingExpert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Brain className="h-4 w-4" />}
+              {expertOutput ? "Re-run Expert AI Analysis" : "Run Expert AI Analysis"}
+            </Button>
             {output && stepId < 8 && (
               <Button variant="outline" onClick={onAdvance} className="gap-2">
                 Next Step <ArrowRight className="h-4 w-4" />
@@ -289,33 +312,31 @@ function GuidedStep({
           </div>
         </header>
 
-        {/* View toggle — always visible for expert-enabled steps */}
-        {expertAvailable && (
-          <div className="flex gap-1 border-b border-border bg-surface/40 p-2">
-            <button
-              onClick={() => setView("standard")}
-              className={
-                "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
-                (view === "standard"
-                  ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
-                  : "text-muted-foreground hover:text-foreground")
-              }
-            >
-              Structured Input Summary
-            </button>
-            <button
-              onClick={() => setView("expert")}
-              className={
-                "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
-                (view === "expert"
-                  ? "bg-accent/20 text-foreground ring-1 ring-accent/40"
-                  : "text-muted-foreground hover:text-foreground")
-              }
-            >
-              Expert AI Analysis
-            </button>
-          </div>
-        )}
+        {/* View toggle */}
+        <div className="flex gap-1 border-b border-border bg-surface/40 p-2">
+          <button
+            onClick={() => setView("standard")}
+            className={
+              "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
+              (view === "standard"
+                ? "bg-primary/15 text-foreground ring-1 ring-primary/30"
+                : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            Structured Input Summary
+          </button>
+          <button
+            onClick={() => setView("expert")}
+            className={
+              "rounded-md px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider transition " +
+              (view === "expert"
+                ? "bg-accent/20 text-foreground ring-1 ring-accent/40"
+                : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            Expert AI Analysis
+          </button>
+        </div>
 
         <div className="p-5">
           {!output && !expertOutput && !generating && !generatingExpert && (
@@ -336,7 +357,6 @@ function GuidedStep({
             </div>
           )}
 
-          {/* Expert view */}
           {view === "expert" && expertOutput && !generating && !generatingExpert && (
             <>
               <div className="mb-3 flex items-center justify-between">
@@ -373,8 +393,6 @@ function GuidedStep({
             </>
           )}
 
-
-          {/* Standard view */}
           {view === "standard" && output && !editing && !generating && (
             <>
               <article className="prose-oa max-w-none whitespace-pre-wrap font-mono text-[13px] leading-6 text-foreground">
@@ -407,6 +425,7 @@ function GuidedStep({
           )}
         </div>
       </section>
+      )}
 
       {/* Analyst Notes — Steps 6–8 */}
       {notesAvailable && (
@@ -447,20 +466,20 @@ function GuidedStep({
 
 
 function FinalReportCard({ project }: { project: Project }) {
-  const finalFn = useServerFn(oaFinalReport);
-  const [loading, setLoading] = useState(false);
-  const allDone = OA_STEPS.every((s) => project.steps[s.id]?.output);
+  const [open, setOpen] = useState(false);
 
-  async function run() {
-    setLoading(true);
+  function generate(kind: ReportKind) {
     try {
-      const res = await finalFn({ data: { project } });
-      saveFinalReport(project.id, res.report);
-      toast.success("Final report generated");
+      const report = buildProjectReport(project, kind);
+      saveFinalReport(project.id, report);
+      toast.success(
+        kind === "user"
+          ? "User Input report generated"
+          : "User Input + Expert AI report generated",
+      );
+      setOpen(false);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Failed");
-    } finally {
-      setLoading(false);
+      toast.error(e instanceof Error ? e.message : "Failed to build report");
     }
   }
 
@@ -470,17 +489,65 @@ function FinalReportCard({ project }: { project: Project }) {
         Final Report
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
-        {allDone ? "All 8 steps complete — ready to synthesize." : "Complete all 8 steps to enable."}
+        Compile analyst inputs, notes, and optional Expert AI outputs into a single report.
       </p>
       <Button
         size="sm"
-        disabled={!allDone || loading}
-        onClick={run}
+        onClick={() => setOpen(true)}
         className="mt-3 w-full gap-2"
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        {project.finalReport ? "Regenerate" : "Generate Report"}
+        <Sparkles className="h-4 w-4" />
+        {project.finalReport ? "Regenerate Report" : "Generate Report"}
       </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Select Report Type</DialogTitle>
+            <DialogDescription>
+              Choose which sources to include in the generated report.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="ring-grid rounded-md bg-surface/40 p-3">
+              <div className="font-display text-sm font-semibold">User Input Report</div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Generate a report using only analyst-provided inputs and notes.
+              </p>
+              <Button
+                size="sm"
+                className="mt-3 w-full"
+                onClick={() => generate("user")}
+              >
+                Generate User Input Report
+              </Button>
+            </div>
+            <div className="ring-grid rounded-md bg-surface/40 p-3">
+              <div className="font-display text-sm font-semibold">
+                User Input + Expert AI Report
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Generate a report using analyst inputs, notes, and any saved Expert AI
+                outputs from Steps 1–5.
+              </p>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="mt-3 w-full"
+                onClick={() => generate("user-expert")}
+              >
+                Generate User Input + Expert AI Report
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {project.finalReport && (
         <details className="mt-3 text-xs">
           <summary className="cursor-pointer text-muted-foreground">Preview</summary>
