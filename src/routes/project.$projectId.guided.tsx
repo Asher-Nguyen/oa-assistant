@@ -467,30 +467,66 @@ function GuidedStep({
 
 function FinalReportCard({ project }: { project: Project }) {
   const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<ReportKind>("user");
+  const navigate = Route.useNavigate();
 
-  function generate(kind: ReportKind) {
+  function generate() {
     try {
       const report = buildProjectReport(project, kind);
-      saveFinalReport(project.id, report);
+      saveFinalReport(project.id, report, kind);
       toast.success(
         kind === "user"
           ? "User Input report generated"
           : "User Input + Expert AI report generated",
       );
       setOpen(false);
+      navigate({
+        to: "/project/$projectId/report",
+        params: { projectId: project.id },
+      });
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed to build report");
     }
   }
+
+  const lastGenerated = project.finalReportGeneratedAt
+    ? new Date(project.finalReportGeneratedAt).toLocaleString()
+    : null;
+  const lastKindLabel =
+    project.finalReportKind === "user-expert"
+      ? "User Input + Expert AI"
+      : project.finalReportKind === "user"
+        ? "User Input Only"
+        : "—";
 
   return (
     <div className="ring-grid mt-4 rounded-lg bg-card p-4">
       <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
         Final Report
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Compile analyst inputs, notes, and optional Expert AI outputs into a single report.
-      </p>
+
+      {project.finalReport ? (
+        <div className="mt-3 space-y-2 text-xs">
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              Last Generated
+            </div>
+            <div className="text-foreground">{lastGenerated}</div>
+          </div>
+          <div>
+            <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              Report Type
+            </div>
+            <div className="text-foreground">{lastKindLabel}</div>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Compile analyst inputs, notes, and optional Expert AI outputs into a
+          single report.
+        </p>
+      )}
+
       <Button
         size="sm"
         onClick={() => setOpen(true)}
@@ -500,62 +536,91 @@ function FinalReportCard({ project }: { project: Project }) {
         {project.finalReport ? "Regenerate Report" : "Generate Report"}
       </Button>
 
+      {project.finalReport && (
+        <Button
+          size="sm"
+          variant="outline"
+          asChild
+          className="mt-2 w-full gap-2"
+        >
+          <Link
+            to="/project/$projectId/report"
+            params={{ projectId: project.id }}
+          >
+            <FileText className="h-4 w-4" /> Open Report Viewer
+          </Link>
+        </Button>
+      )}
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Select Report Type</DialogTitle>
+            <DialogTitle>Generate Final Report</DialogTitle>
             <DialogDescription>
               Choose which sources to include in the generated report.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="ring-grid rounded-md bg-surface/40 p-3">
-              <div className="font-display text-sm font-semibold">User Input Report</div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Generate a report using only analyst-provided inputs and notes.
-              </p>
-              <Button
-                size="sm"
-                className="mt-3 w-full"
-                onClick={() => generate("user")}
-              >
-                Generate User Input Report
-              </Button>
-            </div>
-            <div className="ring-grid rounded-md bg-surface/40 p-3">
-              <div className="font-display text-sm font-semibold">
-                User Input + Expert AI Report
+          <div className="space-y-2">
+            <label
+              className={
+                "flex cursor-pointer items-start gap-3 rounded-md border p-3 transition " +
+                (kind === "user"
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-border hover:bg-surface/40")
+              }
+            >
+              <input
+                type="radio"
+                name="report-kind"
+                className="mt-1"
+                checked={kind === "user"}
+                onChange={() => setKind("user")}
+              />
+              <div>
+                <div className="font-display text-sm font-semibold">
+                  User Input Report
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Analyst inputs and notes only.
+                </p>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Generate a report using analyst inputs, notes, and any saved Expert AI
-                outputs from Steps 1–5.
-              </p>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="mt-3 w-full"
-                onClick={() => generate("user-expert")}
-              >
-                Generate User Input + Expert AI Report
-              </Button>
-            </div>
+            </label>
+            <label
+              className={
+                "flex cursor-pointer items-start gap-3 rounded-md border p-3 transition " +
+                (kind === "user-expert"
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-border hover:bg-surface/40")
+              }
+            >
+              <input
+                type="radio"
+                name="report-kind"
+                className="mt-1"
+                checked={kind === "user-expert"}
+                onChange={() => setKind("user-expert")}
+              />
+              <div>
+                <div className="font-display text-sm font-semibold">
+                  User Input + Expert AI Report
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Analyst inputs, notes, and saved Expert AI outputs from
+                  Steps 1–5.
+                </p>
+              </div>
+            </label>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               Cancel
             </Button>
+            <Button onClick={generate} className="gap-2">
+              <Sparkles className="h-4 w-4" /> Generate Report
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {project.finalReport && (
-        <details className="mt-3 text-xs">
-          <summary className="cursor-pointer text-muted-foreground">Preview</summary>
-          <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap font-mono text-[11px] text-foreground">
-            {project.finalReport}
-          </pre>
-        </details>
-      )}
     </div>
   );
 }
