@@ -407,9 +407,43 @@ function GuidedStep({
           )}
         </div>
       </section>
+
+      {/* Analyst Notes — Steps 6–8 */}
+      {notesAvailable && (
+        <section className="ring-grid rounded-lg bg-card p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className="font-mono text-[11px] uppercase tracking-wider text-accent">
+                Analyst Notes
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Capture observations, decisions, and follow-ups for Step {stepId}.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                saveStepNotes(project.id, stepId, notesDraft);
+                toast.success("Notes saved");
+              }}
+            >
+              <Check className="h-4 w-4" /> Save Notes
+            </Button>
+          </div>
+          <Textarea
+            rows={10}
+            value={notesDraft}
+            onChange={(e) => setNotesDraft(e.target.value)}
+            placeholder="Analyst notes…"
+            className="font-mono text-xs"
+          />
+        </section>
+      )}
     </div>
   );
 }
+
 
 
 function FinalReportCard({ project }: { project: Project }) {
