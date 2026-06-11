@@ -461,20 +461,20 @@ function GuidedStep({
 
 
 function FinalReportCard({ project }: { project: Project }) {
-  const finalFn = useServerFn(oaFinalReport);
-  const [loading, setLoading] = useState(false);
-  const allDone = OA_STEPS.every((s) => project.steps[s.id]?.output);
+  const [open, setOpen] = useState(false);
 
-  async function run() {
-    setLoading(true);
+  function generate(kind: ReportKind) {
     try {
-      const res = await finalFn({ data: { project } });
-      saveFinalReport(project.id, res.report);
-      toast.success("Final report generated");
+      const report = buildProjectReport(project, kind);
+      saveFinalReport(project.id, report);
+      toast.success(
+        kind === "user"
+          ? "User Input report generated"
+          : "User Input + Expert AI report generated",
+      );
+      setOpen(false);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Failed");
-    } finally {
-      setLoading(false);
+      toast.error(e instanceof Error ? e.message : "Failed to build report");
     }
   }
 
@@ -484,17 +484,65 @@ function FinalReportCard({ project }: { project: Project }) {
         Final Report
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
-        {allDone ? "All 8 steps complete — ready to synthesize." : "Complete all 8 steps to enable."}
+        Compile analyst inputs, notes, and optional Expert AI outputs into a single report.
       </p>
       <Button
         size="sm"
-        disabled={!allDone || loading}
-        onClick={run}
+        onClick={() => setOpen(true)}
         className="mt-3 w-full gap-2"
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        {project.finalReport ? "Regenerate" : "Generate Report"}
+        <Sparkles className="h-4 w-4" />
+        {project.finalReport ? "Regenerate Report" : "Generate Report"}
       </Button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Select Report Type</DialogTitle>
+            <DialogDescription>
+              Choose which sources to include in the generated report.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="ring-grid rounded-md bg-surface/40 p-3">
+              <div className="font-display text-sm font-semibold">User Input Report</div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Generate a report using only analyst-provided inputs and notes.
+              </p>
+              <Button
+                size="sm"
+                className="mt-3 w-full"
+                onClick={() => generate("user")}
+              >
+                Generate User Input Report
+              </Button>
+            </div>
+            <div className="ring-grid rounded-md bg-surface/40 p-3">
+              <div className="font-display text-sm font-semibold">
+                User Input + Expert AI Report
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Generate a report using analyst inputs, notes, and any saved Expert AI
+                outputs from Steps 1–5.
+              </p>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="mt-3 w-full"
+                onClick={() => generate("user-expert")}
+              >
+                Generate User Input + Expert AI Report
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {project.finalReport && (
         <details className="mt-3 text-xs">
           <summary className="cursor-pointer text-muted-foreground">Preview</summary>
