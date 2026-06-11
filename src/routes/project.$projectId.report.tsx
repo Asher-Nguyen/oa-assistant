@@ -246,5 +246,4 @@ function splitReportSections(report: string): Map<number, string> {
 function getStepIds(): number[] {
   return OA_STEPS.map((s) => s.id);
 }
-// silence unused warning for getStep import (kept for potential future use)
-void getStep;
+
