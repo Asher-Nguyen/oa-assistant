@@ -182,11 +182,16 @@ export function mergeStepInputs(
   });
 }
 
-export function saveFinalReport(projectId: string, report: string) {
+export function saveFinalReport(
+  projectId: string,
+  report: string,
+  kind?: "user" | "user-expert",
+) {
   updateProject(projectId, (p) => ({
     ...p,
     finalReport: report,
     finalReportGeneratedAt: new Date().toISOString(),
+    ...(kind ? { finalReportKind: kind } : {}),
   }));
 }
 
