@@ -6,7 +6,6 @@ import {
   buildArtifactPrompt,
   buildExpertArtifactPrompt,
   buildFinalReportPrompt,
-  buildGuidedSystemPrompt,
 } from "./oa-prompts";
 
 const MODEL = "openai/gpt-5-mini";
@@ -18,11 +17,6 @@ const ProjectSchema = z.object({
   createdAt: z.string().max(64),
   updatedAt: z.string().max(64),
   steps: z.record(z.string().max(8), z.any()),
-});
-
-const MessageSchema = z.object({
-  role: z.enum(["user", "assistant"]),
-  content: z.string().max(4000),
 });
 
 function getProviderAndModel() {
