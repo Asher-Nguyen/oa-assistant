@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { useHydrated, useProject } from "@/lib/projects-store";
-import { OA_STEPS, getStep } from "@/lib/oa-steps";
+import { OA_STEPS } from "@/lib/oa-steps";
 import {
   ChevronLeft,
   Copy,
