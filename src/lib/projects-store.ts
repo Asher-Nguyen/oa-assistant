@@ -27,6 +27,7 @@ export type Project = {
   steps: Record<number, StepState>;
   finalReport?: string;
   finalReportGeneratedAt?: string;
+  finalReportKind?: "user" | "user-expert";
 };
 
 const KEY = "oa.projects.v1";
